@@ -416,7 +416,7 @@ monster*** readMonsters(FILE **inFiles, int n) {
         for(int x = 0; x < n; x++) {
             
             // monster count per file is (x+1) * 10,000
-            monsterCount = (x+1)*10000;
+            monsterCount = (x+1);//*10000;
             // allocates space for 1 file of count of monsters
             mIndex[x] = (monster**)malloc(monsterCount*sizeof(monster*));
             
@@ -444,7 +444,7 @@ void freeIndex(monster*** mIndex, int n) {
 
     int monsterCount;
     for (int x = 0; x < n; x++) {
-        monsterCount = (x+1)*10000;
+        monsterCount = (x+1);//*10000;
         for (int y = 0; y < monsterCount; y++) {
             free(mIndex[x][y]->name);
             free(mIndex[x][y]->element);
@@ -458,14 +458,12 @@ void freeIndex(monster*** mIndex, int n) {
 // opens txt file to corresponding file array index
 FILE** createInFileArray(FILE** inFiles, int n) {
 
-    // 'x' in name[] will be replaced with appropriate value, counting up to n files
-    char name[] = "x0K.txt";
+    char buffer[20];
     for (int x = 0; x < n; x++) {
 
-        // 49 is ascii value of 1
-        name[0] = x+49;
-        inFiles[x] = fopen(name, "r");
-        //printf("%s\n", name); //debug
+        snprintf(buffer, 20, "%d0K.txt", x+1);
+        inFiles[x] = fopen(buffer, "r");
+    
     }
     return inFiles;
 }
@@ -473,14 +471,13 @@ FILE** createInFileArray(FILE** inFiles, int n) {
 // opens csv file to corresponding file array index
 FILE** createOutFileArray(FILE** outFiles, int m) {
 
-    // 'x' in name[] will be replaced with appropriate value, counting up to n files
-    char name[] = "criteria_x.csv";
+    char buffer[20];
     for (int x = 0; x < m; x++) {
 
-        // 49 is ascii value of 1
-        name[9] = x+49;
-        outFiles[x] = fopen(name, "a");
-        //printf("%s\n", name); //debug
+        snprintf(buffer, 20, "criteria_%d.csv", x+1);
+        outFiles[x] = fopen(buffer, "w");
+
+        fprintf(outFiles[x], "DataSize,SelectionSortCompare,SelectionSortCopy,SelectionSortTime,BubbleSortCompare,BubbleSortCopy,BubbleSortTime,InsertionSortCompare,InsertionSortCopy,InsertionSortTime,MergeSortCompare,MergeSortCopy,MergeSortTime,Merge_InsertionSortCompare,Merge_InsertionSortCopy,Merge_InsertionSortTime,QuickSortCompare,QuickSortCopy,QuickSortTime");
     }
     return outFiles;
 }
@@ -528,7 +525,7 @@ void printSortStatus(int isSorted, int criteria, char* algName, char* beforeOrAf
 void writeToCSV(FILE* outputFile, sort_results* results, clock_t clocks) {
 
     // printf("Total time taken %lfs\n", ((double) clocks) /CLOCKS_PER_SEC)
-    fprintf(outputFile, "%lld, %lld, %lf\n", results->compares, results->copies, ((double) clocks) /CLOCKS_PER_SEC);
+    fprintf(outputFile, "%lld, %lld, %lf", results->compares, results->copies, ((double) clocks) /CLOCKS_PER_SEC);
 
 }
 
@@ -577,15 +574,20 @@ void sortArrayByCriteria(monster** monsters, int monsterCount, int criteria, sor
 void sortIndexByCriteria(monster*** monsterIndex, int n, int criteria, sort_results* results, FILE* outputFile)
 {
     for (int i = 0; i < n; i++) {
-        int monsterCount = (i+1)*10000;
+        int monsterCount = (i+1);//*10000;
         sortArrayByCriteria(monsterIndex[i], monsterCount, criteria, results, outputFile);
+        fprintf(outputFile, "\n");
     }
 }
 
 int main(void) {
+
+    // TODO memory leak file
     
     // create our sort_results structure to record data
     sort_results* results = (sort_results*)malloc(sizeof(sort_results));
+    results->compares = 0;
+    results->copies = 0;
     
     // number of input files
     int n = 6;
@@ -619,6 +621,7 @@ int main(void) {
 
     // free allocated array of file ptrs
     free(inputFiles);
+    free(outputFiles);
 }
 
 // TODO
