@@ -29,7 +29,7 @@ void print_clocks(clock_t clocks) {
     printf("Total time taken %lfs\n", ((double) clocks) /CLOCKS_PER_SEC);
 }
 
-void printResults(sort_results* results) {
+void printAndClearResults(sort_results* results) {
     
     printf("Total number of comparisons: %lld\n", results->compares);
     printf("Total number of copy operations: %lld\n\n", results->copies);
@@ -514,17 +514,24 @@ void SortArrayByAlgorithm(monster** monsters, int monsterCount, int criteria, so
     // Make a copy of the current monsters array before sorting it.
     monster** monstersCopy = copyArray(monsters, monsterCount);
 
+    clock_t end_cpu, start_cpu;
+
     // Print the check to see if it is sorted
     printSortStatus(isSorted(monstersCopy, monsterCount, criteria), criteria, algName, "before");
 
+    start_cpu = clock();
     // Sort using algorithm and criteria
     (*sortingAlgorithm)(monstersCopy, monsterCount, criteria, results);
 
+    end_cpu = clock();
+
     // Print the check to see if it is sorted
     printSortStatus(isSorted(monstersCopy, monsterCount, criteria), criteria, algName, "after");
+
+    print_clocks(end_cpu - start_cpu);
     
     // Print comparisons and copies and clear result attributes
-    printResults(results);
+    printAndClearResults(results);
 
     // TODO - Export data to csv
     
