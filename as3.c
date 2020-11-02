@@ -27,7 +27,6 @@ typedef struct {
 void print_clocks(clock_t clocks) {
 
     printf("Total time taken %lfs\n", ((double) clocks) /CLOCKS_PER_SEC);
-    return;
 }
 
 void printResults(sort_results* results) {
@@ -36,7 +35,6 @@ void printResults(sort_results* results) {
     printf("Total number of copy operations: %lld\n\n", results->copies);
     results->compares = 0;
     results->copies = 0;
-    return;
 }
 
 int compareTo(monster* m1, monster* m2, int criteria) {
@@ -204,6 +202,47 @@ void selectionSort(monster** monsters, int monsterCount, int criteria, sort_resu
     selectionSortCore(monsters, 0, monsterCount, criteria, results);
 }
 
+// Chooses an element in the array and places all items smaller to the left and all items larger to the right.
+// The pivot is guaranteed to be in the correct position, other elements are not.
+int partition(monster** monsters, int left, int right, int criteria, sort_results* results) {
+
+    int pivotIndex = right; // I don't need to make a whole new monster
+    
+    int i = left + rand()%(right-left+1);
+    swap(&monsters[i], &monsters[pivotIndex], results);
+
+    int nextInsert = left;
+    for(int x = left; x < right; x++) {
+
+        int compare = compareTo(monsters[x], monsters[pivotIndex], criteria);
+        results->compares++;
+
+        if (compare != 1) {
+            swap(&monsters[x], &monsters[nextInsert], results);
+            nextInsert++;
+        }        
+    }
+    swap(&monsters[nextInsert], &monsters[pivotIndex], results);
+    
+    return nextInsert;
+}
+
+void quickSortCore(monster** monsters, int left, int right, int criteria, sort_results* results) {
+// both left and right are BOTH indexes
+
+    if (left < right) {
+
+        int partitionIndex = partition(monsters, left, right, criteria, results);
+    
+        quickSortCore(monsters, left, partitionIndex-1, criteria, results);
+        quickSortCore(monsters, partitionIndex+1, right, criteria, results);
+    }
+}
+
+void quickSort(monster** monsters, int monsterCount, int criteria, sort_results* results) {
+    quickSortCore(monsters, 0, monsterCount-1, criteria, results);
+}
+
 void bubbleSort(monster** monsters, int monsterCount, int criteria, sort_results* results) {
     
     for (int x = 0; x < monsterCount; x++) {
@@ -296,7 +335,7 @@ void merge(monster** monsters, int left1, int right1, int left2, int right2, int
     free(temp);
 }
 
-void mergeSort(monster** monsters, int left, int right, int criteria, sort_results* results) {
+void mergeSortCore(monster** monsters, int left, int right, int criteria, sort_results* results) {
     
     int length = right - left;
 
@@ -305,13 +344,17 @@ void mergeSort(monster** monsters, int left, int right, int criteria, sort_resul
     }
 
     int middle = (left + right)/2;
-    mergeSort(monsters, left, middle, criteria, results);
-    mergeSort(monsters, middle, right, criteria, results);
+    mergeSortCore(monsters, left, middle, criteria, results);
+    mergeSortCore(monsters, middle, right, criteria, results);
     
     merge(monsters, left, middle, middle, right, criteria, results);
 }
 
-void modifiedMergeSort(monster** monsters, int left, int right, int criteria, sort_results* results) {
+void mergeSort(monster** monsters, int monsterCount, int criteria, sort_results* results) {
+    mergeSortCore(monsters, 0, monsterCount, criteria, results);
+}
+
+void modifiedMergeSortCore(monster** monsters, int left, int right, int criteria, sort_results* results) {
 
     int length = right - left;
 
@@ -321,47 +364,14 @@ void modifiedMergeSort(monster** monsters, int left, int right, int criteria, so
     }
 
     int middle = (left + right)/2;
-    mergeSort(monsters, left, middle, criteria, results);
-    mergeSort(monsters, middle, right, criteria, results);
+    modifiedMergeSortCore(monsters, left, middle, criteria, results);
+    modifiedMergeSortCore(monsters, middle, right, criteria, results);
     
     merge(monsters, left, middle, middle, right, criteria, results);
 }
 
-// Chooses an element in the array and places all items smaller to the left and all items larger to the right.
-// The pivot is guaranteed to be in the correct position, other elements are not.
-int partition(monster** monsters, int left, int right, int criteria, sort_results* results) {
-
-    int pivotIndex = right; // I don't need to make a whole new monster
-    
-    int i = left + rand()%(right-left+1);
-    swap(&monsters[i], &monsters[pivotIndex], results);
-
-    int nextInsert = left;
-    for(int x = left; x < right; x++) {
-
-        int compare = compareTo(monsters[x], monsters[pivotIndex], criteria);
-        results->compares++;
-
-        if (compare != 1) {
-            swap(&monsters[x], &monsters[nextInsert], results);
-            nextInsert++;
-        }        
-    }
-    swap(&monsters[nextInsert], &monsters[pivotIndex], results);
-    
-    return nextInsert;
-}
-
-void quickSort(monster** monsters, int left, int right, int criteria, sort_results* results) {
-// both left and right are BOTH indexes
-
-    if (left < right) {
-
-        int partitionIndex = partition(monsters, left, right, criteria, results);
-    
-        quickSort(monsters, left, partitionIndex-1, criteria, results);
-        quickSort(monsters, partitionIndex+1, right, criteria, results);
-    }
+void modifiedMergeSort(monster** monsters, int monsterCount, int criteria, sort_results* results) {
+    modifiedMergeSortCore(monsters, 0, monsterCount, criteria, results);
 }
 
 monster* createMonster(/*int id,*/char* name, char* element, int pop, double weight) {
@@ -406,7 +416,7 @@ monster*** readMonsters(FILE **inFiles, int n) {
         for(int x = 0; x < n; x++) {
             
             // monster count per file is (x+1) * 10,000
-            monsterCount = (x+1);//*10000;
+            monsterCount = (x+1)*10000;
             // allocates space for 1 file of count of monsters
             mIndex[x] = (monster**)malloc(monsterCount*sizeof(monster*));
             
@@ -434,7 +444,7 @@ void freeIndex(monster*** mIndex, int n) {
 
     int monsterCount;
     for (int x = 0; x < n; x++) {
-        monsterCount = (x+1);//*10000;
+        monsterCount = (x+1)*10000;
         for (int y = 0; y < monsterCount; y++) {
             free(mIndex[x][y]->name);
             free(mIndex[x][y]->element);
@@ -451,6 +461,7 @@ FILE** createFileArray(FILE** inFiles, int n) {
     // 'x' in name[] will be replaced with appropriate value, counting up to n files
     char name[] = "x0K.txt";
     for (int x = 0; x < n; x++) {
+
         // 49 is ascii value of 1
         name[0] = x+49;
         inFiles[x] = fopen(name, "r");
@@ -467,59 +478,85 @@ void closeInFiles(FILE** inFiles, int n) {
     }
 }
 
-monster*** createCopy(monster*** mIndex, int n) {
+monster** copyArray(monster** monsters, int monsterCount) {
 
-    monster*** copy = (monster***)malloc(n*sizeof(monster**));
-    int monsterCount;
-
-    for (int x = 0; x < n; x++) {
-        
-        monsterCount = (x+1);//*10000;
-        copy[x] = (monster**)malloc(monsterCount*sizeof(monster*));
-
-        for (int y = 0; y < monsterCount; y++) {
-            
-            copy[x][y] = (monster*)malloc(sizeof(monster));
-
-            int nameLength = strlen(mIndex[x][y]->name) + 1;
-            int elementLength = strlen(mIndex[x][y]->element) + 1;
-
-            copy[x][y]->name = (char*)malloc(nameLength*sizeof(char));
-            copy[x][y]->element = (char*)malloc(elementLength*sizeof(char));
-
-            copy[x][y]->population = mIndex[x][y]->population;
-            copy[x][y]->weight = mIndex[x][y]->weight;
-            strcpy(copy[x][y]->name, mIndex[x][y]->name);
-            strcpy(copy[x][y]->element, mIndex[x][y]->element);
-        }
+    monster** monstersCopy = (monster**)malloc(monsterCount*sizeof(monster*));
+    for (int x = 0; x < monsterCount; x++) {
+        monstersCopy[x] = monsters[x];
     }
-    return copy;
+    return monstersCopy;
+}
+
+void printSortStatus(int isSorted, int criteria, char* algName, char* beforeOrAfter) {
+
+    char* criteriaName;
+
+    if (criteria == 1) {
+        criteriaName = "weight";
+    }
+    else if (criteria == 2) {
+        criteriaName = "name";
+    }
+    else {
+        criteriaName = "name and weight";
+    }
+
+    if(isSorted == 1) {
+        printf("Array status: sorted by %s %s calling %s sort\n", criteriaName, beforeOrAfter, algName);
+    }
+    else {
+        printf("Array status: not sorted by %s %s calling %s sort\n", criteriaName, beforeOrAfter, algName);
+    }
+}
+
+void SortArrayByAlgorithm(monster** monsters, int monsterCount, int criteria, sort_results* results, void (*sortingAlgorithm)(monster**, int, int, sort_results*), char* algName) 
+{
+    // Make a copy of the current monsters array before sorting it.
+    monster** monstersCopy = copyArray(monsters, monsterCount);
+
+    // Print the check to see if it is sorted
+    printSortStatus(isSorted(monstersCopy, monsterCount, criteria), criteria, algName, "before");
+
+    // Sort using algorithm and criteria
+    (*sortingAlgorithm)(monstersCopy, monsterCount, criteria, results);
+
+    // Print the check to see if it is sorted
+    printSortStatus(isSorted(monstersCopy, monsterCount, criteria), criteria, algName, "after");
+    
+    // Print comparisons and copies and clear result attributes
+    printResults(results);
+
+    // TODO - Export data to csv
+    
+    // Free the locally allocated memory.
+    free(monstersCopy);
+}
+
+void sortArrayByCriteria(monster** monsters, int monsterCount, int criteria, sort_results* results)
+{   
+    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, &selectionSort, "selection");
+    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, &bubbleSort, "bubble");
+    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, &insertionSort, "insertion");
+    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, &mergeSort, "merge");
+    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, &modifiedMergeSort, "modified merge");
+    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, &quickSort, "quick");
+}
+
+void sortIndexByCriteria(monster*** monsterIndex, int n, int criteria, sort_results* results)
+{
+    for (int i = 0; i < n; i++) {
+        int monsterCount = (i+1)*10000;
+        sortArrayByCriteria(monsterIndex[i], monsterCount, criteria, results);
+    }
 }
 
 int main(void) {
-
-    //atexit(report_mem_leak);
-
-    // number of input files
-    int n = 6;
-
-    // criteria for calling sorting algorithm
-    int numOfCriteria = 3;
-    int criteria[3] = {1,2,3}; // {names, weights, names&weights}
-
-    // string names of sorts for array status'
-    char* stringSelectionSort = "selection sort";
-    char* stringBubbleSort = "bubble sort";
-    char* stringInsertionSort = "insertion sort";
-    char* stringMergeSort = "merge sort";
-    char* stringMMergeSort = "modified merge sort";
-    char* stringQuickSort = "quick sort";
-
-    // string names of criteria type for array status' 
-    char criteriaString[3][16] = {"name", "weight", "name and weight"};
-
+    
     // create our sort_results structure to record data
     sort_results* results = (sort_results*)malloc(sizeof(sort_results));
+    
+    // number of input files
+    int n = 6;
 
     // allocate mem for array of file pointers
     FILE** inputFiles = (FILE**)malloc(sizeof(FILE*)*n);
@@ -528,278 +565,15 @@ int main(void) {
     
     // creates our monster index and reads in data from files
     monster*** monsterIndex = readMonsters(inputFiles, n);
-
-
-
-    // Selection Sort
-
-    printf("\nSELECTION SORT DATA:\n\n");
     
-    for (int x = 0; x < numOfCriteria; x++) {
-        
-        // creates copy of unsorted index of arrays
-        monster*** copyIndex = createCopy(monsterIndex, n);
+    // Sort all arrays by criteria1
+    sortIndexByCriteria(monsterIndex, n, 1, results);
 
-        // each loop sorts an entire file by criteria
-        for (int i = 0; i < n; i++) {
-            int monsterCount = (i+1);//*10000;
+    // Sort all arrays by criteria2
+    sortIndexByCriteria(monsterIndex, n, 2, results);
 
-            // checks if every file is sorted correctly for given criteria
-            if (isSorted(copyIndex[i], monsterCount, criteria[x])) {
-                printf("Array[%d] status: sorted by %s before calling %s\n", i, criteriaString[x], stringSelectionSort);
-                //continue;
-            }
-            else {
-                printf("Array[%d] status: not sorted by %s before calling %s\n", i, criteriaString[x], stringSelectionSort);
-                //continue;
-            }
-
-            clock_t start_cpu, end_cpu;
-            start_cpu = clock();
-            // call algorithm per file
-            selectionSort(copyIndex[i], monsterCount, criteria[x], results);
-            end_cpu = clock();
-
-            if (isSorted(copyIndex[i], monsterCount, criteria[x])) {
-                printf("Array[%d] status: sorted by %s after returning from %s\n", i, criteriaString[x], stringSelectionSort);
-                //continue;
-            }
-            else {
-                printf("Array[%d] status: not sorted by %s after returning from %s\n", i, criteriaString[x], stringSelectionSort);
-                // stops sorting if last file did not sort correctly
-                break;
-            }
-            print_clocks(end_cpu - start_cpu);
-            printResults(results);
-        }
-        printf("\n");
-        freeIndex(copyIndex, n);
-    }
-
-
-    // Bubble Sort
-    printf("\nBUBBLE SORT DATA:\n\n");
-
-    for (int x = 0; x < numOfCriteria; x++) {
-        
-        // creates copy of unsorted index of arrays
-        monster*** copyIndex = createCopy(monsterIndex, n);
-
-        // each loop sorts an entire file by criteria
-        for (int i = 0; i < n; i++) {
-            int monsterCount = (i+1);//*10000;
-
-            // checks if every file is sorted correctly for given criteria
-            if (isSorted(copyIndex[i], monsterCount, criteria[x])) {
-                printf("Array[%d] status: sorted by %s before calling %s\n", i, criteriaString[x], stringBubbleSort);
-                //continue;
-            }
-            else {
-                printf("Array[%d] status: not sorted by %s before calling %s\n", i, criteriaString[x], stringBubbleSort);
-                //continue;
-            }
-
-            clock_t start_cpu, end_cpu;
-            start_cpu = clock();
-            // call algorithm per file
-            bubbleSort(copyIndex[i], monsterCount, criteria[x], results);
-            end_cpu = clock();
-
-            if (isSorted(copyIndex[i], monsterCount, criteria[x])) {
-                printf("Array[%d] status: sorted by %s after returning from %s\n", i, criteriaString[x], stringBubbleSort);
-                //continue;
-            }
-            else {
-                printf("Array[%d] status: not sorted by %s after returning from %s\n", i, criteriaString[x], stringBubbleSort);
-                // stops sorting if last file did not sort correctly
-                break;
-            }
-            print_clocks(end_cpu - start_cpu);
-            printResults(results);
-        }
-        printf("\n");
-        freeIndex(copyIndex, n);
-    }
-
-
-    // Insertion Sort
-    printf("\nINSERTION SORT DATA:\n\n");
-    
-    for (int x = 0; x < numOfCriteria; x++) {
-        
-        // creates copy of unsorted index of arrays
-        monster*** copyIndex = createCopy(monsterIndex, n);
-
-        // each loop sorts an entire file by criteria
-        for (int i = 0; i < n; i++) {
-            int monsterCount = (i+1);//*10000;
-
-            // checks if every file is sorted correctly for given criteria
-            if (isSorted(copyIndex[i], monsterCount, criteria[x])) {
-                printf("Array[%d] status: sorted by %s before calling %s\n", i, criteriaString[x], stringInsertionSort);
-                //continue;
-            }
-            else {
-                printf("Array[%d] status: not sorted by %s before calling %s\n", i, criteriaString[x], stringInsertionSort);
-                //continue;
-            }
-
-            clock_t start_cpu, end_cpu;
-            start_cpu = clock();
-            // call algorithm per file
-            insertionSort(copyIndex[i], monsterCount, criteria[x], results);
-            end_cpu = clock();
-
-            if (isSorted(copyIndex[i], monsterCount, criteria[x])) {
-                printf("Array[%d] status: sorted by %s after returning from %s\n", i, criteriaString[x], stringInsertionSort);
-                //continue;
-            }
-            else {
-                printf("Array[%d] status: not sorted by %s after returning from %s\n", i, criteriaString[x], stringInsertionSort);
-                // stops sorting if last file did not sort correctly
-                break;
-            }
-            print_clocks(end_cpu - start_cpu);
-            printResults(results);
-        }
-        printf("\n");
-        freeIndex(copyIndex, n);
-    }
-
-
-    // Merge Sort
-    printf("\nMERGE SORT DATA:\n\n");
-
-    for (int x = 0; x < numOfCriteria; x++) {
-        
-        // creates copy of unsorted index of arrays
-        monster*** copyIndex = createCopy(monsterIndex, n);
-
-        // each loop sorts an entire file by criteria
-        for (int i = 0; i < n; i++) {
-            int monsterCount = (i+1);//*10000;
-
-            // checks if every file is sorted correctly for given criteria
-            if (isSorted(copyIndex[i], monsterCount, criteria[x])) {
-                printf("Array[%d] status: sorted by %s before calling %s\n", i, criteriaString[x], stringMergeSort);
-                //continue;
-            }
-            else {
-                printf("Array[%d] status: not sorted by %s before calling %s\n", i, criteriaString[x], stringMergeSort);
-                //continue;
-            }
-
-            clock_t start_cpu, end_cpu;
-            start_cpu = clock();
-            // call algorithm per file
-            mergeSort(copyIndex[i], 0, monsterCount, criteria[x], results);
-            end_cpu = clock();
-
-            if (isSorted(copyIndex[i], monsterCount, criteria[x])) {
-                printf("Array[%d] status: sorted by %s after returning from %s\n", i, criteriaString[x], stringMergeSort);
-                //continue;
-            }
-            else {
-                printf("Array[%d] status: not sorted by %s after returning from %s\n", i, criteriaString[x], stringMergeSort);
-                // stops sorting if last file did not sort correctly
-                break;
-            }
-            print_clocks(end_cpu - start_cpu);
-            printResults(results);
-        }
-        printf("\n");
-        freeIndex(copyIndex, n);
-    }
-
-
-    // Modified Merge Sort
-    printf("\nMODIFIED MERGE SORT DATA:\n\n");
-    
-    for (int x = 0; x < numOfCriteria; x++) {
-        
-        // creates copy of unsorted index of arrays
-        monster*** copyIndex = createCopy(monsterIndex, n);
-
-        // each loop sorts an entire file by criteria
-        for (int i = 0; i < n; i++) {
-            int monsterCount = (i+1);//*10000;
-
-            // checks if every file is sorted correctly for given criteria
-            if (isSorted(copyIndex[i], monsterCount, criteria[x])) {
-                printf("Array[%d] status: sorted by %s before calling %s\n", i, criteriaString[x], stringMMergeSort);
-                //continue;
-            }
-            else {
-                printf("Array[%d] status: not sorted by %s before calling %s\n", i, criteriaString[x], stringMMergeSort);
-                //continue;
-            }
-
-            clock_t start_cpu, end_cpu;
-            start_cpu = clock();
-            // call algorithm per file
-            modifiedMergeSort(copyIndex[i], 0, monsterCount, criteria[x], results);
-            end_cpu = clock();
-
-            if (isSorted(copyIndex[i], monsterCount, criteria[x])) {
-                printf("Array[%d] status: sorted by %s after returning from %s\n", i, criteriaString[x], stringMMergeSort);
-                //continue;
-            }
-            else {
-                printf("Array[%d] status: not sorted by %s after returning from %s\n", i, criteriaString[x], stringMMergeSort);
-                // stops sorting if last file did not sort correctly
-                break;
-            }
-            print_clocks(end_cpu - start_cpu);
-            printResults(results);
-        }
-        printf("\n");
-        freeIndex(copyIndex, n);
-    }
-
-
-    // Quick Sort
-    printf("\nQUICK SORT DATA:\n\n");
-    
-    for (int x = 0; x < numOfCriteria; x++) {
-        
-        // creates copy of unsorted index of arrays
-        monster*** copyIndex = createCopy(monsterIndex, n);
-
-        // each loop sorts an entire file by criteria
-        for (int i = 0; i < n; i++) {
-            int monsterCount = (i+1);//*10000;
-
-            // checks if every file is sorted correctly for given criteria
-            if (isSorted(copyIndex[i], monsterCount, criteria[x])) {
-                printf("Array[%d] status: sorted by %s before calling %s\n", i, criteriaString[x], stringQuickSort);
-                //continue;
-            }
-            else {
-                printf("Array[%d] status: not sorted by %s before calling %s\n", i, criteriaString[x], stringQuickSort);
-                //continue;
-            }
-
-            clock_t start_cpu, end_cpu;
-            start_cpu = clock();
-            // call algorithm per file
-            quickSort(copyIndex[i], 0, monsterCount-1, criteria[x], results);
-            end_cpu = clock();
-
-            if (isSorted(copyIndex[i], monsterCount, criteria[x])) {
-                printf("Array[%d] status: sorted by %s after returning from %s\n", i, criteriaString[x], stringQuickSort);
-                //continue;
-            }
-            else {
-                printf("Array[%d] status: not sorted by %s after returning from %s\n", i, criteriaString[x], stringQuickSort);
-                // stops sorting if last file did not sort correctly
-                break;
-            }
-            print_clocks(end_cpu - start_cpu);
-            printResults(results);
-        }
-        printf("\n");
-        freeIndex(copyIndex, n);
-    }
+    // Sort all arrays by criteria3
+    sortIndexByCriteria(monsterIndex, n, 3, results);
 
     // frees our 2D array of monster structures
     freeIndex(monsterIndex, n);
@@ -813,11 +587,3 @@ int main(void) {
     // free allocated array of file ptrs
     free(inputFiles);
 }
-
-/* 
-    clock_t start_cpu, end_cpu;
-    start_cpu = clock();
-    //call your sorting algorithm
-    end_cpu = clock();
-    print_clocks(end_cpu - start_cpu); 
-*/
