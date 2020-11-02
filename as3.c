@@ -525,7 +525,10 @@ void printSortStatus(int isSorted, int criteria, char* algName, char* beforeOrAf
 }
 
 // TODO - Exports data to the CSV represented by outputFile
-void writeToCSV(FILE* outputFile) {
+void writeToCSV(FILE* outputFile, sort_results* results, clock_t clocks) {
+
+    // printf("Total time taken %lfs\n", ((double) clocks) /CLOCKS_PER_SEC)
+    fprintf(outputFile, "%lld, %lld, %lf\n", results->compares, results->copies, ((double) clocks) /CLOCKS_PER_SEC);
 
 }
 
@@ -552,7 +555,7 @@ void SortArrayByAlgorithm(monster** monsters, int monsterCount, int criteria, so
     print_clocks(end_cpu - start_cpu);
 
     // Export data to csv
-    writeToCSV(outputFile);
+    writeToCSV(outputFile, results, end_cpu - start_cpu);
 
     // Print comparisons and copies and clear result attributes
     printAndClearResults(results);
