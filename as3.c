@@ -456,7 +456,7 @@ void freeIndex(monster*** mIndex, int n) {
 }
 
 // opens txt file to corresponding file array index
-FILE** createFileArray(FILE** inFiles, int n) {
+FILE** createInFileArray(FILE** inFiles, int n) {
 
     // 'x' in name[] will be replaced with appropriate value, counting up to n files
     char name[] = "x0K.txt";
@@ -470,11 +470,26 @@ FILE** createFileArray(FILE** inFiles, int n) {
     return inFiles;
 }
 
-//closes all files in file array
-void closeInFiles(FILE** inFiles, int n) {
+// opens csv file to corresponding file array index
+FILE** createOutFileArray(FILE** outFiles, int m) {
+
+    // 'x' in name[] will be replaced with appropriate value, counting up to n files
+    char name[] = "criteria_x.csv";
+    for (int x = 0; x < m; x++) {
+
+        // 49 is ascii value of 1
+        name[9] = x+49;
+        outFiles[x] = fopen(name, "a");
+        //printf("%s\n", name); //debug
+    }
+    return outFiles;
+}
+
+// closes all files in file array
+void closeFiles(FILE** files, int n) {
 
     for (int x = 0; x < n; x++) {
-        fclose(inFiles[x]);
+        fclose(files[x]);
     }
 }
 
@@ -509,7 +524,12 @@ void printSortStatus(int isSorted, int criteria, char* algName, char* beforeOrAf
     }
 }
 
-void SortArrayByAlgorithm(monster** monsters, int monsterCount, int criteria, sort_results* results, void (*sortingAlgorithm)(monster**, int, int, sort_results*), char* algName) 
+// TODO - Exports data to the CSV represented by outputFile
+void writeToCSV(FILE* outputFile) {
+
+}
+
+void SortArrayByAlgorithm(monster** monsters, int monsterCount, int criteria, sort_results* results, FILE* outputFile, void (*sortingAlgorithm)(monster**, int, int, sort_results*), char* algName) 
 {
     // Make a copy of the current monsters array before sorting it.
     monster** monstersCopy = copyArray(monsters, monsterCount);
@@ -528,32 +548,34 @@ void SortArrayByAlgorithm(monster** monsters, int monsterCount, int criteria, so
     // Print the check to see if it is sorted
     printSortStatus(isSorted(monstersCopy, monsterCount, criteria), criteria, algName, "after");
 
+    // Print total time taken to sort array by criteria & given alg
     print_clocks(end_cpu - start_cpu);
-    
+
+    // Export data to csv
+    writeToCSV(outputFile);
+
     // Print comparisons and copies and clear result attributes
     printAndClearResults(results);
-
-    // TODO - Export data to csv
     
     // Free the locally allocated memory.
     free(monstersCopy);
 }
 
-void sortArrayByCriteria(monster** monsters, int monsterCount, int criteria, sort_results* results)
+void sortArrayByCriteria(monster** monsters, int monsterCount, int criteria, sort_results* results, FILE* outputFile)
 {   
-    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, &selectionSort, "selection");
-    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, &bubbleSort, "bubble");
-    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, &insertionSort, "insertion");
-    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, &mergeSort, "merge");
-    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, &modifiedMergeSort, "modified merge");
-    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, &quickSort, "quick");
+    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, outputFile, &selectionSort, "selection");
+    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, outputFile, &bubbleSort, "bubble");
+    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, outputFile, &insertionSort, "insertion");
+    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, outputFile, &mergeSort, "merge");
+    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, outputFile, &modifiedMergeSort, "modified merge");
+    SortArrayByAlgorithm(monsters, monsterCount, criteria, results, outputFile, &quickSort, "quick");
 }
 
-void sortIndexByCriteria(monster*** monsterIndex, int n, int criteria, sort_results* results)
+void sortIndexByCriteria(monster*** monsterIndex, int n, int criteria, sort_results* results, FILE* outputFile)
 {
     for (int i = 0; i < n; i++) {
         int monsterCount = (i+1)*10000;
-        sortArrayByCriteria(monsterIndex[i], monsterCount, criteria, results);
+        sortArrayByCriteria(monsterIndex[i], monsterCount, criteria, results, outputFile);
     }
 }
 
@@ -564,29 +586,30 @@ int main(void) {
     
     // number of input files
     int n = 6;
+    // number of output files
+    int m = 3;
 
     // allocate mem for array of file pointers
     FILE** inputFiles = (FILE**)malloc(sizeof(FILE*)*n);
-    // creates our file ptr array
-    inputFiles = createFileArray(inputFiles, n);
+    FILE** outputFiles = (FILE**)malloc(sizeof(FILE*)*m);
+    
+    // creates our file ptr arrays
+    inputFiles = createInFileArray(inputFiles, n);
+    outputFiles = createOutFileArray(outputFiles, m);
     
     // creates our monster index and reads in data from files
     monster*** monsterIndex = readMonsters(inputFiles, n);
     
-    // Sort all arrays by criteria1
-    sortIndexByCriteria(monsterIndex, n, 1, results);
-
-    // Sort all arrays by criteria2
-    sortIndexByCriteria(monsterIndex, n, 2, results);
-
-    // Sort all arrays by criteria3
-    sortIndexByCriteria(monsterIndex, n, 3, results);
+    for (int x = 0; x < m; x++) {
+        sortIndexByCriteria(monsterIndex, n, x+1, results, outputFiles[x]);
+    }
 
     // frees our 2D array of monster structures
     freeIndex(monsterIndex, n);
 
     // closes all files
-    closeInFiles(inputFiles, n);
+    closeFiles(inputFiles, n);
+    closeFiles(outputFiles, m);
 
     // free results
     free(results);
@@ -594,3 +617,8 @@ int main(void) {
     // free allocated array of file ptrs
     free(inputFiles);
 }
+
+// TODO
+// ========
+// Processing Criteria x and file x0K.txt
+// ========
