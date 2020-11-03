@@ -4,7 +4,7 @@ This program is written by: Joey Hodson */
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "leak_detector_c.h"
+//#include "leak_detector_c.h"
 
 //#define MAX_LENGTH 51; //name & element
 //#define MAX_VALUE 1000000; //population
@@ -273,7 +273,7 @@ int main (void) {
 // main outputs to both stdout and an out file. It first calls the 3 functions needed to create 
 // the monster index, region atlas, and trainer list
 
- 	atexit(report_mem_leak);
+ 	//atexit(report_mem_leak);
 	FILE *fp;
 	FILE *fp2;
 	int mCount, tCount, rCount;
