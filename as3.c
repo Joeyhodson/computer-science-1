@@ -600,7 +600,7 @@ void sortIndexByCriteria(monster*** monsterIndex, int n, int criteria, sort_resu
 
 int main(void) {
 
-    // TODO memory leak file
+    //atexit(report_mem_leak);
     
     // create our sort_results structure to record data
     sort_results* results = (sort_results*)malloc(sizeof(sort_results));
