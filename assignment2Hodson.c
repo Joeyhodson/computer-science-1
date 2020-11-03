@@ -4,7 +4,8 @@ Due Date: 10/04/2020 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "leak_detector_c.h"
+//#include "leak_detector_c.h"
+
 //'ground', 'group' & 'queue' are somewhat used interchangeably
 
 typedef struct soldier { //cirular doubly linked list
@@ -353,7 +354,7 @@ void* orderedList(FILE* out, queue** qIndex, int groundCount) { //displays the o
 
 int main(void) { //TODO: Free rest, and devise code in phase 1 for th = 1, k =1.
 
-	atexit(report_mem_leak);
+	//atexit(report_mem_leak);
 	FILE *inFile;
 	FILE *outFile;
 	int qCount;
