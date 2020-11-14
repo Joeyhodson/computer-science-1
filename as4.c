@@ -109,7 +109,7 @@ treeNameNode* buildNameTree(FILE* inFile, int N) {
         return NULL;
     }
     treeNameNode* nameRoot = NULL;
-    char* name;
+    char name[MAXLEN];
     for (int x = 0; x < N; x++) {
         fscanf(inFile, "%s", name);
         treeNameNode* newNameNode = createTreeNameNode(name);
@@ -155,11 +155,53 @@ void populateTrees(FILE* inFile, treeNameNode* nameRoot, int I) {
         }
     }
 }
-//  this function takes the root of the
-// name tree and prints the data of the name tree and the corresponding item trees in the format
-// shown in the sample output. You can call other function from this function as needed.
-void traverse_in_traverse(treeNameNode *root) {
- // save for last once trees are populated
+
+void displayInOrderNameTree(treeNameNode* root) {
+
+    if(root != NULL) {
+        displayInOrderNameTree(root->left);
+        printf("%s ", root->treeName);
+        displayInOrderNameTree(root->right);
+    }
+}
+
+void traverseSubTree(itemNode* root) {
+    
+    if(root != NULL) {
+        traverseSubTree(root->left);
+        printf("%s ", root->name);
+        traverseSubTree(root->right);
+    }
+}
+
+void traverse_in_traverse(treeNameNode* root) {
+
+    if(root != NULL) {
+        traverse_in_traverse(root->left);
+        printf("\n===%s===\n", root->treeName);
+        traverseSubTree(root->theTree);
+        traverse_in_traverse(root->right);
+    }
+}
+
+void freeTree(itemNode* root) {
+
+    if(root != NULL) {
+        freeTree(root->left);
+        freeTree(root->right);
+        free(root);
+    }
+}
+
+// must use post order to free, if not, the root would be freed before other nodes could be freed (leak).
+void freeAll(treeNameNode* root) {
+
+    if(root != NULL) {
+        freeAll(root->left);
+        freeAll(root->right);
+        freeTree(root->theTree);
+        free(root);
+    }
 }
 
 int main(void) {
@@ -169,9 +211,14 @@ int main(void) {
     outFile = fopen("out.txt", "w");
     fscanf(inFile, "%d %d %d", &N, &I, &Q);
     treeNameNode* nameRoot = buildNameTree(inFile, N);
-    populateTrees(inFile, nameRoot, I);
 
-    printf("%d", nameRoot->right->theTree->left->right->right->count);
+    populateTrees(inFile, nameRoot, I);
+    displayInOrderNameTree(nameRoot);
+    traverse_in_traverse(nameRoot);
+
+
+    freeAll(nameRoot);
+
     fclose(inFile);
     fclose(outFile);
 }
