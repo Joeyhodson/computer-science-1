@@ -30,25 +30,47 @@ void predictLetter(char* word, trieNode* trieRoot) {
 
 }
 
-void populateCurrMaxFreq(trieNode* currNode) {
+void updateCurrMaxFreq(trieNode* currNode) {
 
     if (currNode == NULL) {
         return;
     }
 
-
-}
-
-
-void populateSumFreq(trieNode* currNode) {
-
-    if (currNode == NULL) {
-        return;
-    }
-
+    int max = 0;
     for (int x = 0; x < 26; x++) {
         if (currNode->child[x] != NULL) {
-            populateSumFreq(currNode->child[x]);
+            updateCurrMaxFreq(currNode->child[x]);
+            if (currNode->child[x]->sumFreq > max) {
+                max = currNode->child[x]->sumFreq;
+            }
+            //currNode->currMaxFreq = max;
+        }
+    }
+    currNode->currMaxFreq = max;
+}
+/*
+void updateSumFreq(trieNode* currNode, char* word) {
+
+    if (currNode == NULL) {
+        return;
+    }
+
+    char currLett = word[0];
+    updateSumFreq(currNode->child[currLett - 'a'], &word[1]);
+    currNode->sumFreq += currNode->child[currLett - 'a']->sumFreq;
+    currNode->sumFreq += currNode->freq;
+}*/
+
+void updateSumFreq(trieNode* currNode) {
+
+    if (currNode == NULL) {
+        return;
+    }
+
+    currNode->sumFreq = 0;
+    for (int x = 0; x < 26; x++) {
+        if (currNode->child[x] != NULL) {
+            updateSumFreq(currNode->child[x]);
             currNode->sumFreq += currNode->child[x]->sumFreq;
         }
     }
@@ -99,10 +121,13 @@ int readInFile(FILE* inFile, int commandCount, trieNode* trieRoot) {
             fscanf(inFile, "%d", &wordCount);
 
             addWord(word, wordCount, trieRoot);
+            // separated the two functions below for clarity
+            updateSumFreq(trieRoot);
+            updateCurrMaxFreq(trieRoot);
         }
         else if (commandType == 2) {
             fscanf(inFile, "%s", word);
-            //predictLetter(word, trieRoot);
+            predictLetter(word, trieRoot);
         }
         else {
             //free(word);
@@ -137,7 +162,6 @@ int main(void) {
 
      int err = readInFile(inFile, commandCount, trieRoot);
      if (err) {printf("Error while reading from input.\n");}
-     populateSumFreq(trieRoot);
 
      freeTrie(trieRoot);
 
