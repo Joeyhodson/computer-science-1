@@ -14,6 +14,7 @@ typedef struct trieNode {
     int currMaxFreq;
 } trieNode;
 
+// initializes and allocates space for new trie node
 trieNode* createTrieNode() {
     
     trieNode* triNode = (trieNode*)malloc(sizeof(trieNode));
@@ -27,6 +28,7 @@ trieNode* createTrieNode() {
     return triNode;
 }
 
+// prints the next most probable letter(s) of a prefix or word
 void printNextLetter(FILE* outFile, trieNode* currNode) {
 
     int x;
@@ -42,6 +44,9 @@ void printNextLetter(FILE* outFile, trieNode* currNode) {
     fprintf(outFile, "\n");
 }
 
+// finds last node of input prefix or word (if it exists), if trie contains a letter or letters
+// after the least significant letter, it calls 'printNextLetter' to print next most probable
+// letter(s)
 void predictLetter(FILE* outFile, char* word, trieNode* currNode) {
 
     int wordLen = strlen(word);
@@ -65,7 +70,8 @@ void predictLetter(FILE* outFile, char* word, trieNode* currNode) {
     }
 }
 
-
+// continually updates the current max frequency of a node in the trie based
+// upon the max of the node's children's max sum of frequencies
 void updateCurrMaxFreq(trieNode* currNode) {
 
     if (currNode == NULL) {
@@ -79,12 +85,12 @@ void updateCurrMaxFreq(trieNode* currNode) {
             if (currNode->child[x]->sumFreq > max) {
                 max = currNode->child[x]->sumFreq;
             }
-            //currNode->currMaxFreq = max;
         }
     }
     currNode->currMaxFreq = max;
 }
 
+// continually updates the sum of the frequencies of a node's children's sum frequencies
 void updateSumFreq(trieNode* currNode) {
 
     if (currNode == NULL) {
@@ -102,11 +108,13 @@ void updateSumFreq(trieNode* currNode) {
     currNode->sumFreq += currNode->freq;
 }
 
+// adds a letter node (trie node) to the trie
 void addLetter(char currLett, int wordCount, trieNode* currNode) {
 
     currNode->child[currLett - 'a'] = createTrieNode();
 }
 
+// processes an entire inputted word to input new letters into the trie
 void addWord(char* word, int wordCount, trieNode* currNode) {
 
     if (word == NULL || word[0] == '\0') {
@@ -127,6 +135,9 @@ void addWord(char* word, int wordCount, trieNode* currNode) {
     addWord(&word[1], wordCount, currNode->child[currLett - 'a']);
 }
 
+// processes the entire input, creates the trie, and distinguishes/ executes the two different
+// commands to either add a new word to the trie or to find the next most probable letter
+// to an inputted prefix or word
 int readInFile(FILE* inFile, FILE* outFile, int commandCount, trieNode* trieRoot) {
 
     if (inFile == NULL) {
@@ -154,14 +165,13 @@ int readInFile(FILE* inFile, FILE* outFile, int commandCount, trieNode* trieRoot
             predictLetter(outFile, word, trieRoot);
         }
         else {
-            //free(word);
             return 1;
         }
     }
-    //free(word);
     return 0;
 }
 
+// frees entire trie
 void freeTrie(trieNode* trieRoot) {
 
     if (trieRoot == NULL) {
