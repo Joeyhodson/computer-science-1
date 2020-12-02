@@ -30,10 +30,35 @@ void predictLetter(char* word, trieNode* trieRoot) {
 
 }
 
+void populateCurrMaxFreq(trieNode* currNode) {
+
+    if (currNode == NULL) {
+        return;
+    }
+
+
+}
+
+
+void populateSumFreq(trieNode* currNode) {
+
+    if (currNode == NULL) {
+        return;
+    }
+
+    for (int x = 0; x < 26; x++) {
+        if (currNode->child[x] != NULL) {
+            populateSumFreq(currNode->child[x]);
+            currNode->sumFreq += currNode->child[x]->sumFreq;
+        }
+    }
+
+    currNode->sumFreq += currNode->freq;
+}
+
 void addLetter(char currLett, int wordCount, trieNode* currNode) {
 
     currNode->child[currLett - 'a'] = createTrieNode();
-
 }
 
 void addWord(char* word, int wordCount, trieNode* currNode) {
@@ -46,7 +71,13 @@ void addWord(char* word, int wordCount, trieNode* currNode) {
     if (currNode->child[currLett - 'a'] == NULL) {
         addLetter(currLett, wordCount, currNode);
     }
-    
+
+    // sets last node of word it's appropriate count
+    if (strlen(word) == 1) {
+        currNode->child[currLett - 'a']->freq = wordCount;
+        //currNode->child[currLett - 'a']->sumFreq = wordCount;
+    }
+
     addWord(&word[1], wordCount, currNode->child[currLett - 'a']);
 }
 
@@ -78,7 +109,6 @@ int readInFile(FILE* inFile, int commandCount, trieNode* trieRoot) {
             return 1;
         }
     }
-
     //free(word);
     return 0;
 }
@@ -107,6 +137,7 @@ int main(void) {
 
      int err = readInFile(inFile, commandCount, trieRoot);
      if (err) {printf("Error while reading from input.\n");}
+     populateSumFreq(trieRoot);
 
      freeTrie(trieRoot);
 
