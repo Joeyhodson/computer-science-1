@@ -1,0 +1,29 @@
+15
+1 cap 15
+1 cat 20
+1 act 10
+1 able 10
+1 ace 2
+
+ROOT
+
+    a
+
+        c
+
+            t
+
+            e
+
+        b
+        
+            l
+
+                e
+    c
+
+        a
+
+            t
+
+            p
